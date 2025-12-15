@@ -1,0 +1,41 @@
+cmake_minimum_required(VERSION 3.20)
+
+project(STM32F3_RTOS C ASM)
+
+set(LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/STM32F303RETX_FLASH.ld")
+
+set(CMAKE_EXE_LINKER_FLAGS "" CACHE STRING "" FORCE)
+set(CMAKE_EXE_LINKER_FLAGS
+    "${CPU_OPTS} -Wl,--gc-sections -Wl,-Map=${PROJECT_NAME}.map -T${LINKER_SCRIPT}"
+)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+add_subdirectory(FreeRTOS)
+
+add_executable(${PROJECT_NAME}
+    ${CMAKE_SOURCE_DIR}/Core/Src/main.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/init.c
+    ${CMAKE_SOURCE_DIR}/Drivers/Device/Source/system_stm32f3xx.c
+    ${CMAKE_SOURCE_DIR}/Core/Startup/startup_stm32f303xe.s
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    freertos
+)
+
+target_include_directories(${PROJECT_NAME}
+    PRIVATE
+        ${CMAKE_SOURCE_DIR}/Core/Inc
+        ${CMAKE_SOURCE_DIR}/Drivers/CMSIS/Include
+        ${CMAKE_SOURCE_DIR}/Drivers/Device/Include
+)
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    STM32F303xE
+)
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${TOOLCHAIN_PREFIX}objcopy -O binary $<TARGET_FILE:${PROJECT_NAME}> ${PROJECT_NAME}.bin
+    COMMAND ${TOOLCHAIN_PREFIX}objcopy -O ihex   $<TARGET_FILE:${PROJECT_NAME}> ${PROJECT_NAME}.hex
+)

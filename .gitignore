@@ -1,0 +1,22 @@
+# ===== Build artifacts (CMake / embedded) =====
+build/
+*/build/
+**/build/
+
+# ===== VS Code =====
+.vscode/
+*.code-workspace
+
+# ===== VS Code generated configs =====
+.vscode/*.json
+
+# ===== Toolchain / generated =====
+compile_commands.json
+*.map
+*.elf
+*.bin
+*.hex
+
+# ===== OS / editor noise =====
+.DS_Store
+Thumbs.db

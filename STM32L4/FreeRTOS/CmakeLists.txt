@@ -1,0 +1,20 @@
+add_library(freertos STATIC
+    source/event_groups.c
+    source/list.c
+    source/queue.c
+    source/stream_buffer.c
+    source/tasks.c
+    source/timers.c
+    portable/heap_4.c
+    portable/port.c
+)
+
+target_include_directories(freertos
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/portable
+    PRIVATE
+        ${CMAKE_SOURCE_DIR}/Core/Inc
+        ${CMAKE_SOURCE_DIR}/Drivers/Device/Include
+        ${CMAKE_SOURCE_DIR}/Drivers/CMSIS/Include
+)
