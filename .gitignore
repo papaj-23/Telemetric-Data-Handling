@@ -3,6 +3,8 @@ build/
 */build/
 **/build/
 
+*.svd
+
 # ===== VS Code =====
 .vscode/
 *.code-workspace
