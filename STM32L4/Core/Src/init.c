@@ -1,108 +1,139 @@
 #include "init.h"
-#include "stm32l432xx.h"
+#include "stm32l4xx_hal.h"
 
-#define LED_PORT GPIOB
-#define LED_PIN  3U
+static I2C_HandleTypeDef hi2c1;
+static UART_HandleTypeDef huart2;
 
 void SystemClock_Config(void)
 {
-    /* 1. Włącz HSI (domyślnie włączone, ale dla pewności) */
-    RCC->CR |= RCC_CR_HSION;
-    while (!(RCC->CR & RCC_CR_HSIRDY)) {
-        /* wait */
-    }
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-    /* 2. Włącz zasilanie PWR i ustaw VOS = Range 1 */
-    RCC->APB1ENR1 |= RCC_APB1ENR1_PWREN;
+  /** Configure the main internal regulator output voltage
+  */
+  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
-    /* VOS = 01 → Range 1 */
-    PWR->CR1 &= ~PWR_CR1_VOS_Msk;
-    PWR->CR1 |= (1U << PWR_CR1_VOS_Pos);
+  /** Configure LSE Drive Capability
+  */
+  HAL_PWR_EnableBkUpAccess();
+  __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
 
-    while (PWR->SR2 & PWR_SR2_VOSF) {
-        /* wait: stabilizacja regulatora */
-    }
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
+  RCC_OscInitStruct.MSIState = RCC_MSI_ON;
+  RCC_OscInitStruct.MSICalibrationValue = 0;
+  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
+  RCC_OscInitStruct.PLL.PLLM = 1;
+  RCC_OscInitStruct.PLL.PLLN = 16;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
+  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
-    /* 3. Flash wait states na 80 MHz */
-    FLASH->ACR = FLASH_ACR_LATENCY_4WS |
-                 FLASH_ACR_PRFTEN      |
-                 FLASH_ACR_ICEN        |
-                 FLASH_ACR_DCEN;
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-    while ((FLASH->ACR & FLASH_ACR_LATENCY_Msk) != FLASH_ACR_LATENCY_4WS) {
-        /* wait */
-    }
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
-    /* 4. Preskalery = 1 */
-    RCC->CFGR &= ~(RCC_CFGR_HPRE  |
-                   RCC_CFGR_PPRE1 |
-                   RCC_CFGR_PPRE2);
-
-    /* 5. PLL: source = HSI, M=2, N=20, R=2 */
-
-    /* Wyłącz PLL jeśli aktualnie chodzi */
-    RCC->CR &= ~RCC_CR_PLLON;
-    while (RCC->CR & RCC_CR_PLLRDY) {
-        /* wait */
-    }
-
-    /* Wyczyść konfigurację */
-    RCC->PLLCFGR = 0;
-
-    /* PLLSRC = HSI */
-    RCC->PLLCFGR |= RCC_PLLCFGR_PLLSRC_HSI;
-
-    /* PLLM = 2 → zapisujemy (M-1) */
-    RCC->PLLCFGR |= ((2U - 1U) << RCC_PLLCFGR_PLLM_Pos);
-
-    /* PLLN = 20 */
-    RCC->PLLCFGR |= (20U << RCC_PLLCFGR_PLLN_Pos);
-
-    /* PLLR = 2 → 00 */
-    RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLR_Msk;
-
-    /* włącz wyjście PLLR */
-    RCC->PLLCFGR |= RCC_PLLCFGR_PLLREN;
-
-    /* 6. Włącz PLL */
-    RCC->CR |= RCC_CR_PLLON;
-    while (!(RCC->CR & RCC_CR_PLLRDY)) {
-        /* wait */
-    }
-
-    /* 7. Ustaw PLL jako SYSCLK */
-    RCC->CFGR &= ~RCC_CFGR_SW;
-    RCC->CFGR |= RCC_CFGR_SW_PLL;
-
-    while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL) {
-        /* wait */
-    }
-    
-    SystemCoreClockUpdate();
-    /* → SYSCLK = 80 MHz */
+  /** Enable MSI Auto calibration
+  */
+  HAL_RCCEx_EnableMSIPLLMode();
 }
 
-void GPIO_Init(void){
-     /* 1. Włącz zegar dla GPIOB */
-    RCC->AHB2ENR |= RCC_AHB2ENR_GPIOBEN;
-    (void)RCC->AHB2ENR; // mały „dummy read” – czas na start zegara
+void I2C1_Init(void)
+{
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.Timing = 0x0060112F;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
-    /* 2. PB3 jako wyjście push-pull, bez pull-up/down, średnia prędkość */
+  /** Configure Analogue filter
+  */
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
-    /* MODER[2*3+1:2*3] = 01 (Output) */
-    LED_PORT->MODER &= ~(0x3U << (LED_PIN * 2));
-    LED_PORT->MODER |=  (0x1U << (LED_PIN * 2));
+  /** Configure Digital filter
+  */
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+void USART2_UART_Init(void)
+{
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
 
-    /* OTYPER bit 3 = 0 (push-pull) */
-    LED_PORT->OTYPER &= ~(1U << LED_PIN);
+void GPIO_Init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
-    /* OSPEEDR[2*3+1:2*3] = 01 (Medium speed) */
-    LED_PORT->OSPEEDR &= ~(0x3U << (LED_PIN * 2));
-    LED_PORT->OSPEEDR |=  (0x1U << (LED_PIN * 2));
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
 
-    /* PUPDR[2*3+1:2*3] = 00 (no pull) */
-    LED_PORT->PUPDR &= ~(0x3U << (LED_PIN * 2));
+  /*Configure GPIO pin : LD3_Pin */
+  GPIO_InitStruct.Pin = LD3_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(LD3_GPIO_Port, &GPIO_InitStruct);
+}
 
-    /* Na start zgaś LED (zakładam stan wysoki = świeci, ale to zależy od HW) */
-    LED_PORT->BSRR = (1U << (LED_PIN + 16U));  // reset
+void Error_Handler(void)
+{
+  GPIOB->ODR ^= (1U << 3);
+  __disable_irq();
+  while (1)
+  {
+    GPIOB->ODR ^= (1U << 3);
+    HAL_Delay(1500);
+  }
 }

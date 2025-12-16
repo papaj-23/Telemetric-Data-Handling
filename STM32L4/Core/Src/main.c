@@ -1,4 +1,4 @@
-#include "stm32l432xx.h"
+#include "stm32l4xx_hal.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "init.h"
@@ -19,6 +19,8 @@ void Tester_task();
 static void System_Init() {
     SystemClock_Config();
     GPIO_Init();
+    I2C1_Init();
+    USART2_UART_Init();
 }
 
 void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize) {
@@ -45,7 +47,7 @@ static void RTOS_Init() {
 
 void Tester_task() {
     for(;;){
-        GPIOB->ODR ^= (1U << 3);
+        HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
