@@ -1,8 +1,7 @@
 #include "init.h"
-#include "stm32l4xx_hal.h"
 
-static I2C_HandleTypeDef hi2c1;
-static UART_HandleTypeDef huart2;
+I2C_HandleTypeDef hi2c1;
+UART_HandleTypeDef huart2;
 
 void SystemClock_Config(void)
 {
@@ -32,7 +31,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
   RCC_OscInitStruct.PLL.PLLM = 1;
-  RCC_OscInitStruct.PLL.PLLN = 16;
+  RCC_OscInitStruct.PLL.PLLN = 40;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
   RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
   RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
@@ -50,7 +49,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
   {
     Error_Handler();
   }
@@ -90,6 +89,23 @@ void I2C1_Init(void)
     Error_Handler();
   }
 }
+
+void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel6_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
+  /* DMA1_Channel7_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel7_IRQn);
+
+}
+
 void USART2_UART_Init(void)
 {
   huart2.Instance = USART2;
@@ -129,11 +145,9 @@ void GPIO_Init(void)
 
 void Error_Handler(void)
 {
-  GPIOB->ODR ^= (1U << 3);
   __disable_irq();
   while (1)
   {
-    GPIOB->ODR ^= (1U << 3);
-    HAL_Delay(1500);
+
   }
 }

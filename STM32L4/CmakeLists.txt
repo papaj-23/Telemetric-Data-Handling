@@ -17,6 +17,7 @@ add_subdirectory(Drivers/HAL)
 add_executable(${PROJECT_NAME}
     ${CMAKE_SOURCE_DIR}/Core/Src/main.c
     ${CMAKE_SOURCE_DIR}/Core/Src/init.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/mpu-6050.c
     ${CMAKE_SOURCE_DIR}/Drivers/Device/Source/system_stm32l4xx.c
     ${CMAKE_SOURCE_DIR}/Core/Startup/startup_stm32l432xx.s
 )

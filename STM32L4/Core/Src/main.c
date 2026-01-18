@@ -2,6 +2,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "init.h"
+#include "mpu-6050.h"
 
 #define STACK_SIZE 128
 
@@ -62,6 +63,7 @@ void vApplicationTickHook() {
 
 int main(void)
 {
+    HAL_Init();
     System_Init();
     RTOS_Init();
     vTaskStartScheduler();
