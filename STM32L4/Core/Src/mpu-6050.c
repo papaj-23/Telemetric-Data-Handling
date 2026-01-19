@@ -4,7 +4,7 @@
 #define I2C_ADDRESS_7B      (uint16_t) 0x68U //0x69
 #define I2C_ADDRESS_HAL     (I2C_ADDRESS_7B << 1)
 #define MPU6050_REG_SIZE    I2C_MEMADD_SIZE_8BIT
-#define I2C_TIMEOUT         10U     /*  ms  */
+#define I2C_TIMEOUT         20U     /*  ms  */
 #define PAYLOAD_SIZE        14U
 /*  Sensor register addresses  */
 
@@ -71,7 +71,8 @@ static const reg_t init_registers[] = {
 
 void MPU_6050_Init(MPU6050_t *handles) {
     for(size_t i = 0; i < sizeof(init_registers)/sizeof(reg_t); i++) {
-        HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, init_registers[i].addr, MPU6050_REG_SIZE, &init_registers[i].val, 1, I2C_TIMEOUT);
+        uint8_t v = init_registers[i].val;
+        HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, init_registers[i].addr, MPU6050_REG_SIZE, &v, 1, I2C_TIMEOUT);
     }
 }
 

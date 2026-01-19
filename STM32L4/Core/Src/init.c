@@ -2,6 +2,8 @@
 
 I2C_HandleTypeDef hi2c1;
 UART_HandleTypeDef huart2;
+DMA_HandleTypeDef hdma_i2c1_rx;
+DMA_HandleTypeDef hdma_i2c1_tx;
 
 void SystemClock_Config(void)
 {
@@ -59,8 +61,9 @@ void SystemClock_Config(void)
   HAL_RCCEx_EnableMSIPLLMode();
 }
 
-void I2C1_Init(void)
+static void MX_I2C1_Init(void)
 {
+
   hi2c1.Instance = I2C1;
   hi2c1.Init.Timing = 0x0060112F;
   hi2c1.Init.OwnAddress1 = 0;
@@ -88,9 +91,10 @@ void I2C1_Init(void)
   {
     Error_Handler();
   }
+
 }
 
-void MX_DMA_Init(void)
+static void MX_DMA_Init(void)
 {
 
   /* DMA controller clock enable */
@@ -106,8 +110,9 @@ void MX_DMA_Init(void)
 
 }
 
-void USART2_UART_Init(void)
+static void MX_USART2_UART_Init(void)
 {
+
   huart2.Instance = USART2;
   huart2.Init.BaudRate = 115200;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
@@ -122,11 +127,13 @@ void USART2_UART_Init(void)
   {
     Error_Handler();
   }
+
 }
 
-void GPIO_Init(void)
+static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
+
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -141,6 +148,15 @@ void GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD3_GPIO_Port, &GPIO_InitStruct);
+
+}
+
+void System_Init() {
+  SystemClock_Config();
+  MX_GPIO_Init();
+  MX_DMA_Init();
+  MX_USART2_UART_Init();
+  MX_I2C1_Init();
 }
 
 void Error_Handler(void)

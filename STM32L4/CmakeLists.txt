@@ -20,6 +20,9 @@ add_executable(${PROJECT_NAME}
     ${CMAKE_SOURCE_DIR}/Core/Src/mpu-6050.c
     ${CMAKE_SOURCE_DIR}/Drivers/Device/Source/system_stm32l4xx.c
     ${CMAKE_SOURCE_DIR}/Core/Startup/startup_stm32l432xx.s
+    ${CMAKE_SOURCE_DIR}/Core/Src/stm32l4xx_hal_msp.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/stm32l4xx_it.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/rtos_init.c
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
