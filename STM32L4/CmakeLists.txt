@@ -23,6 +23,7 @@ add_executable(${PROJECT_NAME}
     ${CMAKE_SOURCE_DIR}/Core/Src/stm32l4xx_hal_msp.c
     ${CMAKE_SOURCE_DIR}/Core/Src/stm32l4xx_it.c
     ${CMAKE_SOURCE_DIR}/Core/Src/rtos_init.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/callbacks.c
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE

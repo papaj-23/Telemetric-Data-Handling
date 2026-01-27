@@ -58,6 +58,8 @@ typedef struct {
     uint8_t val;
 } reg_t;
 
+static inline int16_t conv_to_i16(uint8_t msb, uint8_t lsb);
+
 static const reg_t init_registers[] = {
     { PWR_MGMT_1,        0x00U},
     { SMPLRT_DIV_REG,    SMPLTR_DIV_VAL },
@@ -79,6 +81,30 @@ void MPU_6050_Init(MPU6050_t *handles) {
 void MPU_6050_Single_Read(MPU6050_t *handles) {
         HAL_I2C_Mem_Read_DMA(handles->hi2c, I2C_ADDRESS_HAL, (uint16_t)ACCEL_XOUT_H, MPU6050_REG_SIZE, handles->rx_buffer ,PAYLOAD_SIZE);
   
+}
+
+static inline int16_t conv_to_i16(uint8_t msb, uint8_t lsb){
+    uint16_t u = ((uint16_t)msb << 8) | (uint16_t)lsb;
+    return (int16_t)u;
+}
+
+void MPU_6050_parse_payload(const uint8_t raw[14], int16_t *inter){
+    for(size_t i = 0; i < 7; i++){
+        *inter++ = conv_to_i16(raw[2*i], raw[2*i+1]);
+    }
+}
+
+MPU6050_data_t MPU6050_payload_to_readable(const int16_t payload[7]){
+    MPU6050_data_t readable;
+    readable.accel_x = payload[0]/8192.0f;
+    readable.accel_y = payload[1]/8192.0f;
+    readable.accel_z = payload[2]/8192.0f;
+    readable.temp = (payload[3]/340.0f) + 35.0f;
+    readable.gyro_x = payload[4]/65.5f;
+    readable.gyro_y = payload[5]/65.5f;
+    readable.gyro_z = payload[6]/65.5f;
+
+    return readable;
 }
 
 

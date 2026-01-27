@@ -16,6 +16,12 @@
 #define LD3_Pin GPIO_PIN_3
 #define LD3_GPIO_Port GPIOB
 
+extern I2C_HandleTypeDef hi2c1;
+extern UART_HandleTypeDef huart2;
+extern DMA_HandleTypeDef hdma_i2c1_rx;
+extern DMA_HandleTypeDef hdma_i2c1_tx;
+extern TIM_HandleTypeDef htim6;
+
 void SystemClock_Config(void);
 void System_Init(void);
 void Error_Handler(void);

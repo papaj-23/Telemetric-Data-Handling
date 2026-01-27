@@ -1,6 +1,8 @@
 #include "stm32l4xx_hal.h"
+#include <string.h>
 #include "FreeRTOS.h"
 #include "task.h"
+#include "semphr.h"
 #include "init.h"
 #include "rtos_init.h"
 #include "mpu-6050.h"
@@ -8,6 +10,12 @@
 static void Tester_handler(void*);
 static void MPU6050_data_transfer_handler(void*);
 static void RTOS_Init(void);
+
+uint8_t dma_i2c_tx_buf[10];
+uint8_t dma_i2c_rx_buf[14];
+
+int16_t intermediate_rx_buf[7];
+MPU6050_data_t current_data;
 
 // Idle task
 static StaticTask_t IdleTaskTCB;
@@ -36,25 +44,42 @@ static const task_init_t mpu6050_data_transfer_init = {
     .name = "MPU6050_data_transfer",
     .stack_size = MPU6050_DATA_TRANSFER_STACK_SIZE,
     .args = NULL,
-    .priority = 2,
+    .priority = 3,
     .stack = mpu6050_data_transfer_stack,
     .tcb = &mpu6050_data_transfer_tcb
 };
 
+// Semaphores / mutexes
+SemaphoreHandle_t read_data_sem = NULL;
+SemaphoreHandle_t data_ready_sem = NULL;
+
 static void Tester_handler(void* pvParameters) {
-    for(;;){
+    extern uint32_t cnt;
+    for(;;) {
         HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+        if(cnt > 1000)
+            cnt = 0;
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
 
 static void MPU6050_data_transfer_handler(void* pvParameters) {
-    ;
+    MPU6050_t mpu_handle = {&hi2c1, dma_i2c_tx_buf, dma_i2c_rx_buf};
+    MPU_6050_Init(&mpu_handle);
+    for(;;) {
+        xSemaphoreTake(read_data_sem, portMAX_DELAY);
+        MPU_6050_Single_Read(&mpu_handle);
+        xSemaphoreTake(data_ready_sem, portMAX_DELAY);
+        MPU_6050_parse_payload(dma_i2c_rx_buf, intermediate_rx_buf);
+        current_data = MPU6050_payload_to_readable(intermediate_rx_buf);
+    }
 }
 
 static void RTOS_Init(void) {
     create_static_task(&tester_init);
     create_static_task(&mpu6050_data_transfer_init);
+    read_data_sem = xSemaphoreCreateBinary();
+    data_ready_sem = xSemaphoreCreateBinary();
 }
 
 void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize) {
