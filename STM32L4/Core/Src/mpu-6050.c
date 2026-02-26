@@ -1,4 +1,3 @@
-#include "stm32l4xx_hal.h"
 #include "mpu-6050.h"
 #include <math.h>
 
@@ -62,6 +61,8 @@
 #define INT_ENABLE_VAL      0x11U   /* 0001 0001 */
 #define USER_CTRL_VAL       0x00U   /* 0000 0000 */
 
+#define STATUS_CHECK(status) (status != HAL_OK)
+
 /* local strucutres definitions */
 
 typedef struct {
@@ -81,7 +82,7 @@ typedef struct {
 /* static functions declarations */
 
 static MPU6050_selftest_t calculate_ft(const uint8_t gyro[3], const uint8_t accel[3]);
-static void MPU_6050_parse_payload_selftest(const uint8_t raw[12], int16_t *inter);
+static void parse_payload_selftest(const uint8_t raw[12], int16_t *inter);
 static inline float selftest_ratio(int16_t diff, float ft);
 static inline int16_t conv_to_i16(uint8_t msb, uint8_t lsb);
 
@@ -100,14 +101,19 @@ static const reg_t init_registers[] = {
     { USER_CTRL_REG,  USER_CTRL_VAL }
 };
 
-void MPU_6050_Init(MPU6050_t *handles) {
+HAL_StatusTypeDef MPU_6050_Init(MPU6050_t *handles) {
+    HAL_StatusTypeDef status = HAL_OK;
     for(size_t i = 0; i < sizeof(init_registers)/sizeof(reg_t); i++) {
         uint8_t v = init_registers[i].val;
-        HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, init_registers[i].addr, MPU6050_REG_SIZE, &v, 1, I2C_TIMEOUT);
+        status = HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, init_registers[i].addr, MPU6050_REG_SIZE, &v, 1, I2C_TIMEOUT);
+        if(STATUS_CHECK(status)) return status;
     }
+    return HAL_OK;
 }
 
-void MPU_6050_Self_Test(MPU6050_t *handles) {
+HAL_StatusTypeDef MPU_6050_Self_Test(MPU6050_t *handles) {
+
+    HAL_StatusTypeDef status = HAL_OK;
 
     /* During self test procedure the sensor must remain stationary to get a valid result */
 
@@ -116,15 +122,18 @@ void MPU_6050_Self_Test(MPU6050_t *handles) {
     uint8_t gyro_config_test = 0U;   // set gyroscope range to +-250dps for selftest
     uint8_t accel_config_test = 1U << 4; //set accelerometer range to +-8g for selftest
 
-    HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, GYRO_CONFIG_REG, MPU6050_REG_SIZE, &gyro_config_test, 1, I2C_TIMEOUT);
-    HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, ACCEL_CONFIG_REG, MPU6050_REG_SIZE, &accel_config_test, 1, I2C_TIMEOUT);
+    status = HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, GYRO_CONFIG_REG, MPU6050_REG_SIZE, &gyro_config_test, 1, I2C_TIMEOUT);
+    if(STATUS_CHECK(status)) return status;
+    status = HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, ACCEL_CONFIG_REG, MPU6050_REG_SIZE, &accel_config_test, 1, I2C_TIMEOUT);
+    if(STATUS_CHECK(status)) return status;
     HAL_Delay(50);
     
     uint8_t test_raw[4];
     uint8_t gyro_test[3];
     uint8_t accel_test[3];
 
-    HAL_I2C_Mem_Read(handles->hi2c, I2C_ADDRESS_HAL, (uint16_t)SELF_TEST_X, MPU6050_REG_SIZE, test_raw, 4, I2C_TIMEOUT);
+    status = HAL_I2C_Mem_Read(handles->hi2c, I2C_ADDRESS_HAL, (uint16_t)SELF_TEST_X, MPU6050_REG_SIZE, test_raw, 4, I2C_TIMEOUT);
+    if(STATUS_CHECK(status)) return status;
 
     enum{x = 0, y = 1, z = 2, a = 3};
     accel_test[x] = ((test_raw[x] & 0x70U) >> 3) | ((test_raw[a] & 0x30U) >> 4);
@@ -141,26 +150,34 @@ void MPU_6050_Self_Test(MPU6050_t *handles) {
     int16_t test_dis_data_numerical[SELFTEST_PAYLOAD/2];
     int16_t test_en_data_numerical[SELFTEST_PAYLOAD/2];
 
-    HAL_I2C_Mem_Read(handles->hi2c, I2C_ADDRESS_HAL, (uint16_t)ACCEL_XOUT_H, MPU6050_REG_SIZE, test_dis_data_raw, SELFTEST_PAYLOAD/2, I2C_TIMEOUT);
-    HAL_I2C_Mem_Read(handles->hi2c, I2C_ADDRESS_HAL, (uint16_t)GYRO_XOUT_H, MPU6050_REG_SIZE, test_dis_data_raw + SELFTEST_PAYLOAD/2, SELFTEST_PAYLOAD/2, I2C_TIMEOUT);
+    status = HAL_I2C_Mem_Read(handles->hi2c, I2C_ADDRESS_HAL, (uint16_t)ACCEL_XOUT_H, MPU6050_REG_SIZE, test_dis_data_raw, SELFTEST_PAYLOAD/2, I2C_TIMEOUT);
+    if(STATUS_CHECK(status)) return status;
+    status = HAL_I2C_Mem_Read(handles->hi2c, I2C_ADDRESS_HAL, (uint16_t)GYRO_XOUT_H, MPU6050_REG_SIZE, test_dis_data_raw + SELFTEST_PAYLOAD/2, SELFTEST_PAYLOAD/2, I2C_TIMEOUT);
+    if(STATUS_CHECK(status)) return status;
 
     gyro_config_test |= 7U << 5;
     accel_config_test |= 7U << 5;
 
     /* enable selftest */
-    HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, GYRO_CONFIG_REG, MPU6050_REG_SIZE, &gyro_config_test, 1, I2C_TIMEOUT);
-    HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, ACCEL_CONFIG_REG, MPU6050_REG_SIZE, &accel_config_test, 1, I2C_TIMEOUT);
+    status = HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, GYRO_CONFIG_REG, MPU6050_REG_SIZE, &gyro_config_test, 1, I2C_TIMEOUT);
+    if(STATUS_CHECK(status)) return status;
+    status = HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, ACCEL_CONFIG_REG, MPU6050_REG_SIZE, &accel_config_test, 1, I2C_TIMEOUT);
+    if(STATUS_CHECK(status)) return status;
     HAL_Delay(50);
 
-    HAL_I2C_Mem_Read(handles->hi2c, I2C_ADDRESS_HAL, (uint16_t)ACCEL_XOUT_H, MPU6050_REG_SIZE, test_en_data_raw, SELFTEST_PAYLOAD/2, I2C_TIMEOUT);
-    HAL_I2C_Mem_Read(handles->hi2c, I2C_ADDRESS_HAL, (uint16_t)GYRO_XOUT_H, MPU6050_REG_SIZE, test_en_data_raw + SELFTEST_PAYLOAD/2, SELFTEST_PAYLOAD/2, I2C_TIMEOUT);
+    status = HAL_I2C_Mem_Read(handles->hi2c, I2C_ADDRESS_HAL, (uint16_t)ACCEL_XOUT_H, MPU6050_REG_SIZE, test_en_data_raw, SELFTEST_PAYLOAD/2, I2C_TIMEOUT);
+    if(STATUS_CHECK(status)) return status;
+    status = HAL_I2C_Mem_Read(handles->hi2c, I2C_ADDRESS_HAL, (uint16_t)GYRO_XOUT_H, MPU6050_REG_SIZE, test_en_data_raw + SELFTEST_PAYLOAD/2, SELFTEST_PAYLOAD/2, I2C_TIMEOUT);
+    if(STATUS_CHECK(status)) return status;
 
     /* disable selftest, restore prevoius scale */
-    HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, GYRO_CONFIG_REG, MPU6050_REG_SIZE, &gyro_config, 1, I2C_TIMEOUT);
-    HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, ACCEL_CONFIG_REG, MPU6050_REG_SIZE, &accel_config, 1, I2C_TIMEOUT);
+    status = HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, GYRO_CONFIG_REG, MPU6050_REG_SIZE, &gyro_config, 1, I2C_TIMEOUT);
+    if(STATUS_CHECK(status)) return status;
+    status = HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, ACCEL_CONFIG_REG, MPU6050_REG_SIZE, &accel_config, 1, I2C_TIMEOUT);
+    if(STATUS_CHECK(status)) return status;
 
-    MPU_6050_parse_payload_selftest(test_dis_data_raw, test_dis_data_numerical);
-    MPU_6050_parse_payload_selftest(test_en_data_raw, test_en_data_numerical);
+    parse_payload_selftest(test_dis_data_raw, test_dis_data_numerical);
+    parse_payload_selftest(test_en_data_raw, test_en_data_numerical);
 
     struct {
         int16_t accel_x;
@@ -184,6 +201,8 @@ void MPU_6050_Self_Test(MPU6050_t *handles) {
     selftest_results.gyro_x  = selftest_ratio(diff.gyro_x,  ft.gyro_x);
     selftest_results.gyro_y  = selftest_ratio(diff.gyro_y,  ft.gyro_y);
     selftest_results.gyro_z  = selftest_ratio(diff.gyro_z,  ft.gyro_z);
+
+    return HAL_OK;
 }
 
 static MPU6050_selftest_t calculate_ft(const uint8_t gyro[3], const uint8_t accel[3]) {
@@ -215,7 +234,7 @@ static MPU6050_selftest_t calculate_ft(const uint8_t gyro[3], const uint8_t acce
     return ft;
 }
 
-static void MPU_6050_parse_payload_selftest(const uint8_t raw[12], int16_t *inter) {
+static void parse_payload_selftest(const uint8_t raw[12], int16_t *inter) {
     for(size_t i = 0; i < 6; i++){
         *inter++ = conv_to_i16(raw[2*i], raw[2*i+1]);
     }
@@ -225,8 +244,11 @@ static inline float selftest_ratio(int16_t diff, float ft) {
     return (ft == 0.0f) ? 0.0f : (((float)diff - ft) / ft);
 }
 
-void MPU_6050_Single_Read(MPU6050_t *handles) {
-        HAL_I2C_Mem_Read_DMA(handles->hi2c, I2C_ADDRESS_HAL, (uint16_t)ACCEL_XOUT_H, MPU6050_REG_SIZE, handles->rx_buffer, PAYLOAD_SIZE);
+HAL_StatusTypeDef MPU_6050_Single_Read(MPU6050_t *handles) {
+    HAL_StatusTypeDef status = HAL_I2C_Mem_Read_DMA(handles->hi2c, I2C_ADDRESS_HAL, (uint16_t)ACCEL_XOUT_H, MPU6050_REG_SIZE, handles->rx_buffer, PAYLOAD_SIZE);
+    if(STATUS_CHECK(status)) return status;
+    
+    return HAL_OK;
 }
 
 static inline int16_t conv_to_i16(uint8_t msb, uint8_t lsb) {
