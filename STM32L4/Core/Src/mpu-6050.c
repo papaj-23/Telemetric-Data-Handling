@@ -136,9 +136,9 @@ HAL_StatusTypeDef MPU_6050_Self_Test(MPU6050_t *handles) {
     if(STATUS_CHECK(status)) return status;
 
     enum{x = 0, y = 1, z = 2, a = 3};
-    accel_test[x] = ((test_raw[x] & 0x70U) >> 3) | ((test_raw[a] & 0x30U) >> 4);
-    accel_test[y] = ((test_raw[y] & 0x70U) >> 3) | ((test_raw[a] & 0x0CU) >> 2);
-    accel_test[z] = ((test_raw[z] & 0x70U) >> 3) | (test_raw[a] & 0x03U);
+    accel_test[x] = ((test_raw[x] & 0xE0U) >> 3) | ((test_raw[a] & 0x30U) >> 4);
+    accel_test[y] = ((test_raw[y] & 0xE0U) >> 3) | ((test_raw[a] & 0x0CU) >> 2);
+    accel_test[z] = ((test_raw[z] & 0xE0U) >> 3) | (test_raw[a] & 0x03U);
     gyro_test[x] = test_raw[x] & 0x1FU;
     gyro_test[y] = test_raw[y] & 0x1FU;
     gyro_test[z] = test_raw[z] & 0x1FU;
