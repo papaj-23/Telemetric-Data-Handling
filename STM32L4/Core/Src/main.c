@@ -65,8 +65,9 @@ static void Tester_handler(void* pvParameters) {
 
 static void MPU6050_data_transfer_handler(void* pvParameters) {
     MPU6050_t mpu_handle = {&hi2c1, dma_i2c_tx_buf, dma_i2c_rx_buf};
+    MPU6050_selftest_t selftest_results;
     MPU_6050_Init(&mpu_handle);
-    MPU_6050_Self_Test(&mpu_handle);
+    MPU_6050_Self_Test(&mpu_handle, &selftest_results);
     for(;;) {
         xSemaphoreTake(read_data_sem, portMAX_DELAY);
         MPU_6050_Single_Read(&mpu_handle);
