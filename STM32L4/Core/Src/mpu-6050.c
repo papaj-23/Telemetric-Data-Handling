@@ -22,6 +22,7 @@
 #define FIFO_EN_REG         0x23U
 #define INT_PIN_CFG_REG     0x37U
 #define INT_ENABLE_REG      0x38U
+#define SIGNAL_PATH_RESET   0x68U
 #define USER_CTRL_REG       0x6AU
 
 #define INT_STATUS          0x3AU
@@ -88,6 +89,8 @@ static MPU6050_selftest_t calculate_ft(const uint8_t gyro[3], const uint8_t acce
 static void parse_payload_selftest(const uint8_t raw[12], int16_t *inter);
 static inline float selftest_ratio(int16_t diff, float ft);
 static inline int16_t conv_to_i16(uint8_t msb, uint8_t lsb);
+static inline HAL_StatusTypeDef gyro_path_reset(MPU6050_t *handles);
+static inline HAL_StatusTypeDef accel_path_reset(MPU6050_t *handles);
 
 static const reg_t init_registers[] = {
     { PWR_MGMT_1,        0x00U},
@@ -274,6 +277,8 @@ HAL_StatusTypeDef MPU6050_Set_Gyro_Range(MPU6050_t *handles, MPU_6050_gyro_range
     reg &= ~(GYRO_RANGE);
     reg |= range << GYRO_RANGE_POS;
     status = HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, GYRO_CONFIG_REG, MPU6050_REG_SIZE, &reg, 1, I2C_TIMEOUT);
+    if(STATUS_CHECK(status)) return status;
+    status = gyro_path_reset(handles);
 
     return status;
 }
@@ -293,6 +298,26 @@ HAL_StatusTypeDef MPU6050_Set_Accel_Range(MPU6050_t *handles, MPU_6050_accel_ran
     reg &= ~(ACCEL_RANGE);
     reg |= range << ACCEL_RANGE_POS;
     status = HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, ACCEL_CONFIG_REG, MPU6050_REG_SIZE, &reg, 1, I2C_TIMEOUT);
+    if(STATUS_CHECK(status)) return status;
+    status = accel_path_reset(handles);
+
+    return status;
+}
+
+
+static inline HAL_StatusTypeDef gyro_path_reset(MPU6050_t *handles) {
+    HAL_StatusTypeDef status = HAL_OK;
+    uint8_t reg = 4U;
+    status = HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, SIGNAL_PATH_RESET, MPU6050_REG_SIZE, &reg, 1, I2C_TIMEOUT);
+
+    return status;
+}
+
+
+static inline HAL_StatusTypeDef accel_path_reset(MPU6050_t *handles) {
+    HAL_StatusTypeDef status = HAL_OK;
+    uint8_t reg = 2U;
+    status = HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, SIGNAL_PATH_RESET, MPU6050_REG_SIZE, &reg, 1, I2C_TIMEOUT);
 
     return status;
 }
