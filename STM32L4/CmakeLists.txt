@@ -43,4 +43,5 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${TOOLCHAIN_PREFIX}objcopy -O binary $<TARGET_FILE:${PROJECT_NAME}> ${PROJECT_NAME}.bin
     COMMAND ${TOOLCHAIN_PREFIX}objcopy -O ihex   $<TARGET_FILE:${PROJECT_NAME}> ${PROJECT_NAME}.hex
+    COMMAND arm-none-eabi-size $<TARGET_FILE:${PROJECT_NAME}>
 )
