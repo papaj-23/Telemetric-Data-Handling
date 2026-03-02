@@ -79,6 +79,9 @@
 #define FIFO_RESET_POS      2U
 #define FIFO_RESET          (1U << FIFO_RESET_POS)
 
+#define LP_WAKE_CTRL_POS    6U
+#define LP_WAKE_CTRL        (3U << LP_WAKE_CTRL_POS)
+
 #define STATUS_CHECK(status)  do{                                  \
                             if((status) != HAL_OK)                 \
                             {                                      \
@@ -182,8 +185,79 @@ HAL_StatusTypeDef MPU_6050_Set_Mode(MPU6050_t *handles, MPU_6050_mode_t mode) {
             break;
 
         default:
-            status = HAL_ERROR;
-            break;
+            return HAL_ERROR;
+    }
+
+    return status;
+}
+
+
+/**
+  * @brief  Reset MPU6050 FIFO buffer and re-enable FIFO operation.
+  * @param  handles Pointer to MPU6050 handle structure.
+  *
+  * @details
+  * Performs a read-modify-write sequence on USER_CTRL register to:
+  *  - clear FIFO enable bit,
+  *  - set FIFO reset bit,
+  *  - optionally wait for internal reset completion,
+  *  - re-enable FIFO operation.
+  *
+  * The function preserves unrelated bits in USER_CTRL register.
+  * If delay_ms_wrapper is provided in the handle structure,
+  * it is used to insert a short delay between reset and re-enable.
+  *
+  * @retval HAL status.
+  */
+HAL_StatusTypeDef MPU_6050_Set_Lp_Wakeup_Freq(MPU6050_t *handles, MPU_6050_lp_freq_t freq) {
+    HAL_StatusTypeDef status = HAL_OK;
+    uint8_t reg;
+    status = HAL_I2C_Mem_Read(handles->hi2c, I2C_ADDRESS_HAL, PWR_MGMT_2, MPU6050_REG_SIZE, &reg, 1, I2C_TIMEOUT);
+    STATUS_CHECK(status);
+
+    reg &= ~(LP_WAKE_CTRL);
+    reg |= (uint8_t)(freq << LP_WAKE_CTRL_POS);
+    status = HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, PWR_MGMT_2, MPU6050_REG_SIZE, &reg, 1, I2C_TIMEOUT);
+
+    return status;
+}
+
+
+
+HAL_StatusTypeDef MPU_6050_Set_Channel_State(MPU6050_t *handles, MPU_6050_meas_channel_t ch, MPU_6050_state_t state) {
+    HAL_StatusTypeDef status = HAL_OK;
+
+    switch (ch) {
+    case ACCEL_X_CH:
+        /* Handle ACCEL X channel */
+        break;
+
+    case ACCEL_Y_CH:
+        /* Handle ACCEL Y channel */
+        break;
+
+    case ACCEL_Z_CH:
+        /* Handle ACCEL Z channel */
+        break;
+
+    case TEMP_CH:
+        /* Handle TEMP channel */
+        break;
+
+    case GYRO_X_CH:
+        /* Handle GYRO X channel */
+        break;
+
+    case GYRO_Y_CH:
+        /* Handle GYRO Y channel */
+        break;
+
+    case GYRO_Z_CH:
+        /* Handle GYRO Z channel */
+        break;
+
+    default:
+        return HAL_ERROR;
     }
 
     return status;
@@ -280,8 +354,8 @@ HAL_StatusTypeDef MPU_6050_Self_Test(MPU6050_t *handles, MPU6050_selftest_t *res
     status = HAL_I2C_Mem_Read(handles->hi2c, I2C_ADDRESS_HAL, GYRO_XOUT_H, MPU6050_REG_SIZE, test_dis_data_raw + SELFTEST_PAYLOAD/2, SELFTEST_PAYLOAD/2, I2C_TIMEOUT);
     STATUS_CHECK(status);
 
-    test_config[GYRO] |= 7U << 5;
-    test_config[ACCEL] |= 7U << 5;
+    test_config[GYRO] |= (uint8_t)(7U << 5);
+    test_config[ACCEL] |= (uint8_t)(7U << 5);
 
     /* enable selftest */
     status = HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, GYRO_CONFIG_REG, MPU6050_REG_SIZE, test_config, 2, I2C_TIMEOUT);
@@ -403,7 +477,7 @@ HAL_StatusTypeDef MPU6050_Set_Gyro_Range(MPU6050_t *handles, MPU_6050_gyro_range
     status = HAL_I2C_Mem_Read(handles->hi2c, I2C_ADDRESS_HAL, GYRO_CONFIG_REG, MPU6050_REG_SIZE, &reg, 1, I2C_TIMEOUT);
     STATUS_CHECK(status);
     reg &= ~(GYRO_RANGE);
-    reg |= range << GYRO_RANGE_POS;
+    reg |= (uint8_t)(range << GYRO_RANGE_POS);
     status = HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, GYRO_CONFIG_REG, MPU6050_REG_SIZE, &reg, 1, I2C_TIMEOUT);
     STATUS_CHECK(status);
     handles->gyro_scale = range;
@@ -431,7 +505,7 @@ HAL_StatusTypeDef MPU6050_Set_Accel_Range(MPU6050_t *handles, MPU_6050_accel_ran
     status = HAL_I2C_Mem_Read(handles->hi2c, I2C_ADDRESS_HAL, ACCEL_CONFIG_REG, MPU6050_REG_SIZE, &reg, 1, I2C_TIMEOUT);
     STATUS_CHECK(status);
     reg &= ~(ACCEL_RANGE);
-    reg |= range << ACCEL_RANGE_POS;
+    reg |= (uint8_t)(range << ACCEL_RANGE_POS);
     status = HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, ACCEL_CONFIG_REG, MPU6050_REG_SIZE, &reg, 1, I2C_TIMEOUT);
     STATUS_CHECK(status);
     handles->accel_scale = range;

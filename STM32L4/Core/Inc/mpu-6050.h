@@ -8,9 +8,9 @@ typedef struct {
     uint8_t *tx_buffer;
     uint8_t *rx_buffer;
     void (*delay_ms_wrapper)(uint32_t);
-    uint8_t *fifo_counter_raw;
-    uint16_t burst_count;
+    uint8_t fifo_counter_raw[2];
     uint16_t fifo_counter;
+    uint16_t burst_count; 
     uint8_t gyro_scale;
     uint8_t accel_scale;
 } MPU6050_t;
@@ -66,8 +66,26 @@ typedef enum {
     MPU_BURST_MODE = 1U,
 } MPU_6050_mode_t;
 
+typedef enum {
+    F_1_25HZ = 0U,
+    F_5HZ = 1U,
+    F_20HZ = 2U,
+    F_40HZ = 3U
+} MPU_6050_lp_freq_t;
+
+typedef enum {
+    ACCEL_X_CH = 0U,
+    ACCEL_Y_CH = 1U,
+    ACCEL_Z_CH = 2U,
+    TEMP_CH = 3U,
+    GYRO_X_CH = 4U,
+    GYRO_Y_CH = 5U,
+    GYRO_Z_CH = 6U
+} MPU_6050_meas_channel_t;
+
 HAL_StatusTypeDef MPU_6050_Init(MPU6050_t *handles);
 HAL_StatusTypeDef MPU_6050_Set_Mode(MPU6050_t *handles, MPU_6050_mode_t mode);
+HAL_StatusTypeDef MPU_6050_Set_Lp_Wakeup_Freq(MPU6050_t *handles, MPU_6050_lp_freq_t freq);
 HAL_StatusTypeDef MPU_6050_FIFO_Reset(MPU6050_t *handles);
 HAL_StatusTypeDef MPU_6050_Self_Test(MPU6050_t *handles, MPU6050_selftest_t *result);
 HAL_StatusTypeDef MPU6050_Set_Gyro_Range(MPU6050_t *handles, MPU_6050_gyro_range_t range);
