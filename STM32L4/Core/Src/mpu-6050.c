@@ -64,23 +64,46 @@
 #define PWR_MGMT_1_VAL_DEFAULT      0x00U   /* 0000 0000 */
 
 #define GYRO_RANGE_POS      3U
-#define GYRO_RANGE          (3U << GYRO_RANGE_POS)
+#define GYRO_RANGE          ((uint8_t)(3U << GYRO_RANGE_POS))
 
 #define ACCEL_RANGE_POS     3U
-#define ACCEL_RANGE         (3U << ACCEL_RANGE_POS)   
+#define ACCEL_RANGE         ((uint8_t)(3U << ACCEL_RANGE_POS))   
 
 #define DATA_READY_INT_POS  0U
-#define DATA_READY_INT      (1U << DATA_READY_INT_POS)
+#define DATA_READY_INT      ((uint8_t)(1U << DATA_READY_INT_POS))
+
 #define FIFO_OFLOW_INT_POS  4U
-#define FIFO_OFLOW_INT      (1U << FIFO_OFLOW_INT_POS)
+#define FIFO_OFLOW_INT      ((uint8_t)(1U << FIFO_OFLOW_INT_POS))
 
 #define FIFO_ENABLE_POS     6U
-#define FIFO_ENABLE         (1U << FIFO_ENABLE_POS)
+#define FIFO_ENABLE         ((uint8_t)(1U << FIFO_ENABLE_POS))
+
 #define FIFO_RESET_POS      2U
-#define FIFO_RESET          (1U << FIFO_RESET_POS)
+#define FIFO_RESET          ((uint8_t)(1U << FIFO_RESET_POS))
 
 #define LP_WAKE_CTRL_POS    6U
-#define LP_WAKE_CTRL        (3U << LP_WAKE_CTRL_POS)
+#define LP_WAKE_CTRL        ((uint8_t)(3U << LP_WAKE_CTRL_POS))
+
+#define ACCEL_X_STANDBY_POS 5U
+#define ACCEL_X_STANDBY     ((uint8_t)(1U << ACCEL_X_STANDBY_POS))
+
+#define ACCEL_Y_STANDBY_POS 4U
+#define ACCEL_Y_STANDBY     ((uint8_t)(1U << ACCEL_Y_STANDBY_POS))
+
+#define ACCEL_Z_STANDBY_POS 3U
+#define ACCEL_Z_STANDBY     ((uint8_t)(1U << ACCEL_Z_STANDBY_POS))
+
+#define GYRO_X_STANDBY_POS  2U
+#define GYRO_X_STANDBY      ((uint8_t)(1U << GYRO_X_STANDBY_POS))
+
+#define GYRO_Y_STANDBY_POS  1U
+#define GYRO_Y_STANDBY      ((uint8_t)(1U << GYRO_Y_STANDBY_POS))
+
+#define GYRO_Z_STANDBY_POS  0U
+#define GYRO_Z_STANDBY      ((uint8_t)(1U << GYRO_Z_STANDBY_POS))
+
+#define TEMP_DIS_POS        3U
+#define TEMP_DIS            ((uint8_t)(1U << TEMP_DIS_POS))
 
 #define STATUS_CHECK(status)  do{                                  \
                             if((status) != HAL_OK)                 \
@@ -223,41 +246,110 @@ HAL_StatusTypeDef MPU_6050_Set_Lp_Wakeup_Freq(MPU6050_t *handles, MPU_6050_lp_fr
 }
 
 
-
+/**
+  * @brief  Enable or disable selected measurement channel.
+  * @param  handles Pointer to MPU6050 handle structure.
+  * @param  ch      Measurement channel to configure (accel, gyro axis or temperature).
+  * @param  state   MPU_ENABLE to enable channel, MPU_DISABLE to disable channel.
+  *
+  * @details
+  * For accelerometer and gyroscope axes, the function modifies the corresponding
+  * standby bits in PWR_MGMT_2 register. Setting a standby bit disables the axis,
+  * clearing it enables measurement.
+  *
+  * For temperature sensor, the function modifies TEMP_DIS bit in PWR_MGMT_1 register.
+  * Setting TEMP_DIS disables temperature measurement, clearing it enables it.
+  *
+  * The function performs a read-modify-write sequence on the appropriate power
+  * management register to preserve unrelated configuration bits.
+  *
+  * @retval HAL status.
+  */
 HAL_StatusTypeDef MPU_6050_Set_Channel_State(MPU6050_t *handles, MPU_6050_meas_channel_t ch, MPU_6050_state_t state) {
     HAL_StatusTypeDef status = HAL_OK;
+    uint8_t reg;
+
+    if(ch == TEMP_CH) {
+        status = HAL_I2C_Mem_Read(handles->hi2c, I2C_ADDRESS_HAL, PWR_MGMT_1, MPU6050_REG_SIZE, &reg, 1, I2C_TIMEOUT);
+    }
+    else {
+        status = HAL_I2C_Mem_Read(handles->hi2c, I2C_ADDRESS_HAL, PWR_MGMT_2, MPU6050_REG_SIZE, &reg, 1, I2C_TIMEOUT);
+    }
+    STATUS_CHECK(status);
 
     switch (ch) {
     case ACCEL_X_CH:
-        /* Handle ACCEL X channel */
+        if(state == MPU_ENABLE) {
+            reg |= ACCEL_X_STANDBY;
+        }
+        else {
+            reg &= ~(ACCEL_X_STANDBY);
+        }
         break;
 
     case ACCEL_Y_CH:
-        /* Handle ACCEL Y channel */
+        if(state == MPU_ENABLE) {
+            reg |= ACCEL_Y_STANDBY;
+        }
+        else {
+            reg &= ~(ACCEL_Y_STANDBY);
+        }
         break;
 
     case ACCEL_Z_CH:
-        /* Handle ACCEL Z channel */
+        if(state == MPU_ENABLE) {
+            reg |= ACCEL_Z_STANDBY;
+        }
+        else {
+            reg &= ~(ACCEL_Z_STANDBY);
+        }
         break;
 
     case TEMP_CH:
-        /* Handle TEMP channel */
+        if(state == MPU_ENABLE) {
+            reg &= ~(TEMP_DIS);
+        }
+        else {
+            reg |= TEMP_DIS;
+        }
         break;
 
     case GYRO_X_CH:
-        /* Handle GYRO X channel */
+        if(state == MPU_ENABLE) {
+            reg |= GYRO_X_STANDBY;
+        }
+        else {
+            reg &= ~(GYRO_X_STANDBY);
+        }
         break;
 
     case GYRO_Y_CH:
-        /* Handle GYRO Y channel */
+        if(state == MPU_ENABLE) {
+            reg |= GYRO_Y_STANDBY;
+        }
+        else {
+            reg &= ~(GYRO_Y_STANDBY);
+        }
         break;
 
     case GYRO_Z_CH:
-        /* Handle GYRO Z channel */
+        if(state == MPU_ENABLE) {
+            reg |= GYRO_Z_STANDBY;
+        }
+        else {
+            reg &= ~(GYRO_Z_STANDBY);
+        }
         break;
 
     default:
         return HAL_ERROR;
+    }
+
+    if(ch == TEMP_CH) {
+        status = HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, PWR_MGMT_1, MPU6050_REG_SIZE, &reg, 1, I2C_TIMEOUT);
+    }
+    else {
+        status = HAL_I2C_Mem_Write(handles->hi2c, I2C_ADDRESS_HAL, PWR_MGMT_2, MPU6050_REG_SIZE, &reg, 1, I2C_TIMEOUT);
     }
 
     return status;

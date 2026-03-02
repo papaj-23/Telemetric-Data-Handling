@@ -8,9 +8,9 @@ typedef struct {
     uint8_t *tx_buffer;
     uint8_t *rx_buffer;
     void (*delay_ms_wrapper)(uint32_t);
+    uint16_t burst_count;
     uint8_t fifo_counter_raw[2];
-    uint16_t fifo_counter;
-    uint16_t burst_count; 
+    uint16_t fifo_counter; 
     uint8_t gyro_scale;
     uint8_t accel_scale;
 } MPU6050_t;
@@ -86,6 +86,7 @@ typedef enum {
 HAL_StatusTypeDef MPU_6050_Init(MPU6050_t *handles);
 HAL_StatusTypeDef MPU_6050_Set_Mode(MPU6050_t *handles, MPU_6050_mode_t mode);
 HAL_StatusTypeDef MPU_6050_Set_Lp_Wakeup_Freq(MPU6050_t *handles, MPU_6050_lp_freq_t freq);
+HAL_StatusTypeDef MPU_6050_Set_Channel_State(MPU6050_t *handles, MPU_6050_meas_channel_t ch, MPU_6050_state_t state);
 HAL_StatusTypeDef MPU_6050_FIFO_Reset(MPU6050_t *handles);
 HAL_StatusTypeDef MPU_6050_Self_Test(MPU6050_t *handles, MPU6050_selftest_t *result);
 HAL_StatusTypeDef MPU6050_Set_Gyro_Range(MPU6050_t *handles, MPU_6050_gyro_range_t range);
