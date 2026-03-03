@@ -1,0 +1,3 @@
+[submodule "STM32L4/Lib/mpu-6050"]
+	path = STM32L4/Lib/mpu-6050
+	url = https://github.com/papaj-23/MPU-6050-driver-for-stm32
