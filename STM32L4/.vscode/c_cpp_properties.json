@@ -1,0 +1,26 @@
+{
+  "version": 4,
+  "configurations": [
+    {
+      "name": "STM32L4",
+      "includePath": [
+        "${workspaceFolder}/Core/Inc",
+        "${workspaceFolder}/Drivers/CMSIS/Include",
+        "${workspaceFolder}/Drivers/Device/Include",
+        "${workspaceFolder}/FreeRTOS/portable",
+        "${workspaceFolder}/FreeRTOS/include",
+        "${workspaceFolder}/Drivers/HAL/Inc",
+        "${workspaceFolder}/Drivers/HAL/Inc/Legacy",
+        "${workspaceFolder}/Lib/mpu-6050"
+      ],
+      "defines": [
+        "STM32L432xx"
+      ],
+      "compilerPath": "arm-none-eabi-gcc",
+      "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+      "cStandard": "c11",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "gcc-arm"
+    }
+  ]
+}

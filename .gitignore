@@ -5,13 +5,6 @@ build/
 
 *.svd
 
-# ===== VS Code =====
-.vscode/
-*.code-workspace
-
-# ===== VS Code generated configs =====
-.vscode/*.json
-
 # ===== Toolchain / generated =====
 compile_commands.json
 *.map

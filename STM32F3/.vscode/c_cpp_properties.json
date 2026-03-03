@@ -1,0 +1,23 @@
+{
+  "version": 4,
+  "configurations": [
+    {
+      "name": "STM32F3",
+      "includePath": [
+        "${workspaceFolder}/Core/Inc",
+        "${workspaceFolder}/Drivers/CMSIS/Include",
+        "${workspaceFolder}/Drivers/Device/Include",
+        "${workspaceFolder}/FreeRTOS/portable",
+        "${workspaceFolder}/FreeRTOS/include"
+      ],
+      "defines": [
+        "STM32F303xe"
+      ],
+      "compilerPath": "arm-none-eabi-gcc",
+      "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+      "cStandard": "c11",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "gcc-arm"
+    }
+  ]
+}

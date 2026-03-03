@@ -1,0 +1,28 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "STM32F3 OpenOCD",
+            "type": "cortex-debug",
+            "request": "launch",
+
+            "servertype": "openocd",
+            "cwd": "${workspaceRoot}",
+
+            "executable": "${workspaceRoot}/build/STM32F3_RTOS.elf",
+
+            "configFiles": [
+                "C:/xpack-openocd-0.12.0-7-win32-x64/xpack-openocd-0.12.0-7/openocd/scripts/interface/stlink.cfg",
+                "C:/xpack-openocd-0.12.0-7-win32-x64/xpack-openocd-0.12.0-7/openocd/scripts/target/stm32f3x.cfg"
+            ],
+
+            "runToEntryPoint": "main",
+            "svdFile": "${workspaceRoot}/Drivers/Device/STM32F303.svd",
+
+            "serverpath": "openocd",
+            "gdbPath": "arm-none-eabi-gdb",
+
+            "preLaunchTask": "CMake: Build"
+        }
+    ]
+}
