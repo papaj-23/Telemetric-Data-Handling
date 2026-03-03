@@ -73,7 +73,7 @@ static void MPU6050_data_transfer_handler(void* pvParameters) {
         MPU_6050_Single_Read(&mpu_handle);
         xSemaphoreTake(data_ready_sem, portMAX_DELAY);
         MPU_6050_parse_payload(dma_i2c_rx_buf, intermediate_rx_buf);
-        current_data = MPU6050_payload_to_readable(&mpu_handle, intermediate_rx_buf);
+        current_data = MPU_6050_payload_to_readable(&mpu_handle, intermediate_rx_buf);
     }
 }
 

@@ -1,6 +1,10 @@
 #ifndef MPU_6050_H
 #define MPU_6050_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "stm32l4xx_hal.h"
 
 typedef struct {
@@ -91,13 +95,18 @@ HAL_StatusTypeDef MPU_6050_Set_Lp_Wakeup_Freq(MPU6050_t *handles, MPU_6050_lp_fr
 HAL_StatusTypeDef MPU_6050_Set_Channel_State(MPU6050_t *handles, MPU_6050_meas_channel_t ch, MPU_6050_state_t state);
 HAL_StatusTypeDef MPU_6050_FIFO_Reset(MPU6050_t *handles);
 HAL_StatusTypeDef MPU_6050_Self_Test(MPU6050_t *handles, MPU6050_selftest_t *result);
-HAL_StatusTypeDef MPU6050_Set_Gyro_Range(MPU6050_t *handles, MPU_6050_gyro_range_t range);
-HAL_StatusTypeDef MPU6050_Set_Accel_Range(MPU6050_t *handles, MPU_6050_accel_range_t range);
-HAL_StatusTypeDef MPU6050_Set_FIFO_Content(MPU6050_t *handles, MPU_6050_fifo_content_t content, MPU_6050_state_t state);
+HAL_StatusTypeDef MPU_6050_Set_Gyro_Range(MPU6050_t *handles, MPU_6050_gyro_range_t range);
+HAL_StatusTypeDef MPU_6050_Set_Accel_Range(MPU6050_t *handles, MPU_6050_accel_range_t range);
+HAL_StatusTypeDef MPU_6050_Set_FIFO_Content(MPU6050_t *handles, MPU_6050_fifo_content_t content, MPU_6050_state_t state);
 HAL_StatusTypeDef MPU_6050_Single_Read(MPU6050_t *handles);
 HAL_StatusTypeDef MPU_6050_Read_FIFO_Cnt(MPU6050_t *handles);
-void MPU_6050_Process_Burst_Cnt(MPU6050_t *handles, const uint8_t raw[2]);
+HAL_StatusTypeDef MPU_6050_Process_Burst_Cnt(MPU6050_t *handles);
 HAL_StatusTypeDef MPU_6050_Burst_Read(MPU6050_t *handles);
 void MPU_6050_parse_payload(const uint8_t raw[14], int16_t *inter);
-MPU6050_data_t MPU6050_payload_to_readable(MPU6050_t *handles, const int16_t payload[7]);
+MPU6050_data_t MPU_6050_payload_to_readable(MPU6050_t *handles, const int16_t payload[7]);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
