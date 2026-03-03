@@ -64,6 +64,7 @@ typedef enum {
 typedef enum {
     MPU_SINGLE_MODE = 0U,
     MPU_BURST_MODE = 1U,
+    MPU_LOWPOWER_CYCLE_MODE = 2U
 } MPU_6050_mode_t;
 
 typedef enum {
@@ -85,6 +86,7 @@ typedef enum {
 
 HAL_StatusTypeDef MPU_6050_Init(MPU6050_t *handles);
 HAL_StatusTypeDef MPU_6050_Set_Mode(MPU6050_t *handles, MPU_6050_mode_t mode);
+HAL_StatusTypeDef MPU_6050_Set_Sleep(MPU6050_t *handles, MPU_6050_state_t state);
 HAL_StatusTypeDef MPU_6050_Set_Lp_Wakeup_Freq(MPU6050_t *handles, MPU_6050_lp_freq_t freq);
 HAL_StatusTypeDef MPU_6050_Set_Channel_State(MPU6050_t *handles, MPU_6050_meas_channel_t ch, MPU_6050_state_t state);
 HAL_StatusTypeDef MPU_6050_FIFO_Reset(MPU6050_t *handles);
