@@ -142,6 +142,8 @@ static inline HAL_StatusTypeDef gyro_path_reset(MPU6050_t *handles);
 static inline HAL_StatusTypeDef accel_path_reset(MPU6050_t *handles);
 static HAL_StatusTypeDef bitset_helper(MPU6050_t *handles, uint8_t reg_address, uint8_t mask, MPU_6050_state_t state);
 
+
+
 static const reg_t init_registers[] = {
     { PWR_MGMT_1,        PWR_MGMT_1_VAL_DEFAULT},
     { SMPLRT_DIV_REG,    SMPLTR_DIV_VAL_DEFAULT },
@@ -154,11 +156,7 @@ static const reg_t init_registers[] = {
 /**
   * @brief  Initialize MPU6050 sensor with default configuration.
   * @param  handles Pointer to MPU6050 handle structure.
-  *
-  * @details
-  * Writes a set of default register values (power management, sample rate divider,
-  * low-pass filter config, FIFO enable, interrupt enable) included in init_registers[].
-  *
+  * 
   * @retval HAL status.
   */
 HAL_StatusTypeDef MPU_6050_Init(MPU6050_t *handles) {
@@ -182,31 +180,6 @@ HAL_StatusTypeDef MPU_6050_Init(MPU6050_t *handles) {
   * @brief  Configure MPU6050 power/streaming mode (single sample, FIFO burst, or low-power cycle).
   * @param  handles Pointer to MPU6050 handle structure.
   * @param  mode    Selected mode: MPU_SINGLE_MODE, MPU_BURST_MODE, or MPU_LOWPOWER_CYCLE_MODE.
-  *
-  * @details
-  * The function configures interrupt source, FIFO usage and power-management bits
-  * to match the selected operating mode:
-  *
-  * MPU_SINGLE_MODE:
-  *  - Enables Data Ready interrupt (INT_ENABLE: DATA_RDY_EN).
-  *  - Disables FIFO streaming (USER_CTRL: FIFO_EN = 0).
-  *  - Forces normal operation: CYCLE = 0, SLEEP = 0.
-  *  - Enables temperature sensor and all accel/gyro axes (standby bits cleared).
-  *
-  * MPU_BURST_MODE:
-  *  - Enables FIFO Overflow interrupt (INT_ENABLE: FIFO_OFLOW_EN).
-  *  - Enables FIFO streaming (USER_CTRL: FIFO_EN = 1).
-  *  - Forces normal operation: CYCLE = 0, SLEEP = 0.
-  *  - Enables temperature sensor and all accel/gyro axes (standby bits cleared).
-  *
-  * MPU_LOWPOWER_CYCLE_MODE:
-  *  - Enables Data Ready interrupt (INT_ENABLE: DATA_RDY_EN).
-  *  - Disables FIFO streaming (USER_CTRL: FIFO_EN = 0).
-  *  - Configures accel-only low power cycling:
-  *      * TEMP disabled (PWR_MGMT_1: TEMP_DIS = 1)
-  *      * Gyro placed in standby (PWR_MGMT_2: gyro standby bits = 1)
-  *      * Accel enabled (PWR_MGMT_2: accel standby bits = 0)
-  *      * CYCLE enabled, SLEEP disabled (PWR_MGMT_1: CYCLE = 1, SLEEP = 0)
   *
   * @retval HAL status.
   */
@@ -349,19 +322,6 @@ HAL_StatusTypeDef MPU_6050_Set_Sleep(MPU6050_t *handles, MPU_6050_state_t state)
   * @param  handles Pointer to MPU6050 handle structure.
   * @param  freq    Low-power wake-up frequency selection (MPU_6050_lp_freq_t).
   *
-  * @details
-  * Updates LP_WAKE_CTRL[7:6] bits in the PWR_MGMT_2 register.
-  * These bits define the internal wake-up rate used in
-  * MPU_LOWPOWER_CYCLE_MODE (accelerometer-only duty-cycled operation).
-  *
-  * The function performs a read-modify-write operation to preserve
-  * unrelated configuration bits in PWR_MGMT_2.
-  *
-  * @note
-  * This setting has effect only when CYCLE mode is enabled
-  * (PWR_MGMT_1: CYCLE = 1). In normal continuous measurement
-  * modes, this field does not affect sensor output rate.
-  *
   * @retval HAL status.
   */
 HAL_StatusTypeDef MPU_6050_Set_Lp_Wakeup_Freq(MPU6050_t *handles, MPU_6050_lp_freq_t freq) {
@@ -389,17 +349,6 @@ HAL_StatusTypeDef MPU_6050_Set_Lp_Wakeup_Freq(MPU6050_t *handles, MPU_6050_lp_fr
   * @param  handles Pointer to MPU6050 handle structure.
   * @param  ch      Measurement channel to configure (accel, gyro axis or temperature).
   * @param  state   MPU_ENABLE to enable, MPU_DISABLE to disable.
-  *
-  * @details
-  * For accelerometer and gyroscope axes, the function modifies the corresponding
-  * standby bits in PWR_MGMT_2 register. Setting a standby bit disables the axis,
-  * clearing it enables measurement.
-  *
-  * For temperature sensor, the function modifies TEMP_DIS bit in PWR_MGMT_1 register.
-  * Setting TEMP_DIS disables temperature measurement, clearing it enables it.
-  *
-  * The function performs a read-modify-write sequence on the appropriate power
-  * management register to preserve unrelated configuration bits.
   *
   * @retval HAL status.
   */
@@ -440,13 +389,6 @@ HAL_StatusTypeDef MPU_6050_Set_Channel_State(MPU6050_t *handles, MPU_6050_meas_c
   * @brief  Reset MPU6050 FIFO buffer and re-enable FIFO operation.
   * @param  handles Pointer to MPU6050 handle structure.
   *
-  * @details
-  * Clears FIFO enable bit, triggers FIFO reset bit, then re-enables FIFO.
-  * If handles->delay_ms_wrapper is provided, it may be used to wait a short time
-  * between reset and re-enable.
-  * 
-  * @attention function is to be used when FIFO_OVERFLOW interrupt occurs
-  *
   * @retval HAL status.
   */
 HAL_StatusTypeDef MPU_6050_FIFO_Reset(MPU6050_t *handles) {
@@ -481,17 +423,6 @@ HAL_StatusTypeDef MPU_6050_FIFO_Reset(MPU6050_t *handles) {
   * @brief  Perform built-in self-test procedure of MPU6050.
   * @param  handles Pointer to MPU6050 handle structure.
   * @param  result  Pointer to structure storing self-test results (in %).
-  *
-  * @details
-  * The device should remain stationary during the test. The function:
-  *  - Saves current GYRO_CONFIG and ACCEL_CONFIG.
-  *  - Applies test ranges and reads self-test factory trim codes.
-  *  - Reads sensor outputs with self-test disabled and enabled.
-  *  - Restores original configuration.
-  *  - Computes self-test response ratio in percent.
-  *
-  * A delay callback (handles->delay_ms_wrapper) may be required for stable results.
-  * @attention During self test procedure the sensor must remain stationary to get a valid result
   *
   * @retval HAL status.
   */
@@ -705,10 +636,6 @@ static inline float selftest_ratio(int16_t diff, float ft) {
   * @param  handles Pointer to MPU6050 handle structure.
   * @param  range   Gyroscope range selection (DPS_250, DPS_500, DPS_1000, DPS_2000).
   *
-  * @details
-  * Updates FS_SEL bits in GYRO_CONFIG register. Afterwards, the gyro signal path
-  * reset is triggered to ensure internal filtering state is refreshed.
-  *
   * @retval HAL status.
   */
 HAL_StatusTypeDef MPU_6050_Set_Gyro_Range(MPU6050_t *handles, MPU_6050_gyro_range_t range) {
@@ -738,10 +665,6 @@ HAL_StatusTypeDef MPU_6050_Set_Gyro_Range(MPU6050_t *handles, MPU_6050_gyro_rang
   * @brief  Set accelerometer full-scale range.
   * @param  handles Pointer to MPU6050 handle structure.
   * @param  range   Accelerometer range selection (G_2, G_4, G_8, G_16).
-  *
-  * @details
-  * Updates AFS_SEL bits in ACCEL_CONFIG register. Afterwards, the accel signal path
-  * reset is triggered to ensure internal filtering state is refreshed.
   *
   * @retval HAL status.
   */
@@ -800,11 +723,6 @@ static inline HAL_StatusTypeDef accel_path_reset(MPU6050_t *handles) {
   * @param  content FIFO content mask (combination of MPU_6050_fifo_content_t values).
   * @param  state   MPU_ENABLE to set bits, MPU_DISABLE to clear bits.
   *
-  * @details
-  * Modifies FIFO_EN register to select which sensor outputs are written into FIFO.
-  * This function only configures FIFO content selection; FIFO must be enabled in
-  * USER_CTRL separately.
-  *
   * @retval HAL status.
   */
 HAL_StatusTypeDef MPU_6050_Set_FIFO_Content(MPU6050_t *handles, MPU_6050_fifo_content_t content, MPU_6050_state_t state) {
@@ -816,11 +734,6 @@ HAL_StatusTypeDef MPU_6050_Set_FIFO_Content(MPU6050_t *handles, MPU_6050_fifo_co
 /**
   * @brief  Start single DMA read of sensor measurement payload.
   * @param  handles Pointer to MPU6050 handle structure.
-  *
-  * @details
-  * Starts a DMA read from ACCEL_XOUT_H for FULL_PAYLOAD_SIZE bytes:
-  * accel (6), temperature (2), gyro (6) = 14 bytes total.
-  * Completion is reported via I2C/DMA callbacks (HAL layer).
   *
   * @retval HAL status.
   */
@@ -840,14 +753,6 @@ HAL_StatusTypeDef MPU_6050_Single_Read(MPU6050_t *handles) {
 /**
   * @brief  Extracts current FIFO buffer count.
   * @param  handles Pointer to MPU6050 handle structure.
-  *
-  * @details
-  * Reads FIFO_COUNT_H and FIFO_COUNT_L registers (16-bit) to determine the number of
-  * bytes currently stored in the FIFO buffer.
-  *
-  * Note: According to the datasheet, reading FIFO_COUNT_H latches the value of both
-  * FIFO count registers. Therefore the count must be read in high-then-low order
-  * to obtain a coherent snapshot.
   *
   * @retval HAL status.
   */
@@ -882,12 +787,6 @@ HAL_StatusTypeDef MPU_6050_Process_Burst_Cnt(MPU6050_t *handles) {
   * @brief  Start burst DMA read from FIFO.
   * @param  handles Pointer to MPU6050 handle structure.
   *
-  * @details
-  * Starts a DMA read from FIFO_R_W register for handles->burst_count bytes.
-  * FIFO must be properly configured and enabled before calling this function.
-  * handles->burst_count must be a multiple of the current payload size in bytes
-  * Make sure to provide DMA buffer >= handles->burst_count.
-  * 
   * @retval HAL status.
   */
 HAL_StatusTypeDef MPU_6050_Burst_Read(MPU6050_t *handles) {
@@ -914,10 +813,6 @@ static inline int16_t conv_to_i16(uint8_t msb, uint8_t lsb) {
   * @param  raw   Pointer to raw sensor payload (14 bytes).
   * @param  inter Pointer to output buffer for converted values (7 x int16_t).
   *
-  * @details
-  * Output order:
-  *  [0..2] accel XYZ, [3] temperature, [4..6] gyro XYZ.
-  *
   * @retval None.
   */
 void MPU_6050_parse_payload(const uint8_t raw[14], int16_t *inter) {
@@ -931,14 +826,6 @@ void MPU_6050_parse_payload(const uint8_t raw[14], int16_t *inter) {
   * @brief  Convert parsed raw data to scaled physical units.
   * @param  handles Pointer to MPU6050 handle structure.
   * @param  payload Pointer to converted raw measurement array (7 x int16_t).
-  *
-  * @details
-  * Uses currently selected ranges to scale:
-  *  - accelerometer to g,
-  *  - gyroscope to deg/s,
-  * and converts temperature to degrees Celsius.
-  *
-  * Note: scaling depends on internal range state used by this driver.
   *
   * @retval MPU6050_data_t structure with scaled values.
   */
