@@ -190,8 +190,6 @@ void System_Init() {
   MX_USART2_UART_Init();
   MX_I2C1_Init();
   MX_TIM6_Init();
-
-  HAL_TIM_Base_Start_IT(&htim6);
 }
 
 void Error_Handler(void)

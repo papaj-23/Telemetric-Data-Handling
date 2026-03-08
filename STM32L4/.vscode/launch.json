@@ -16,11 +16,12 @@
                 "C:/xpack-openocd-0.12.0-7-win32-x64/xpack-openocd-0.12.0-7/openocd/scripts/target/stm32l4x.cfg"
             ],
 
-            "runToEntryPoint": "main",
+            //"runToEntryPoint": "main",
             "svdFile": "${workspaceRoot}/Drivers/Device/STM32L432.svd",
 
             "serverpath": "openocd",
             "gdbPath": "arm-none-eabi-gdb",
+            "showDevDebugOutput": "both",
 
             "preLaunchTask": "CMake: Build"
         }
