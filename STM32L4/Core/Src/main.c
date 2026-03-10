@@ -90,12 +90,8 @@ static void MPU6050_data_receive_handler(void* pvParameters) {
     MPU_6050_Set_Mode(&mpu_handle, MPU_SINGLE_MODE);
     
 
-    //MPU_6050_Set_Channel_State(&mpu_handle, GYRO_X_CH, MPU_DISABLE);
-    //MPU_6050_Set_Channel_State(&mpu_handle, GYRO_Y_CH, MPU_DISABLE);
-    //MPU_6050_Set_Channel_State(&mpu_handle, GYRO_Z_CH, MPU_DISABLE);
-    //MPU_6050_Set_Channel_State(&mpu_handle, TEMP_CH, MPU_DISABLE);
-
     for(;;) {
+        check_registers(&mpu_handle);
         check_registers(&mpu_handle);
         xTaskNotifyWait(0U, 0xFFFFFFFFU, &events, portMAX_DELAY);
 
