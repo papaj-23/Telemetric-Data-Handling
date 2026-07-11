@@ -17,7 +17,6 @@ set(CMAKE_C_STANDARD 11)
 set(CPU_FLAGS " -mcpu=cortex-m4 -mthumb")
 set(FPU_FLAGS " -mfpu=fpv4-sp-d16 -mfloat-abi=hard")
 set(COMMON_WARN_FLAGS " -ffunction-sections -fdata-sections -g3 -Wall -Wextra")
-set(OPT_FLAGS " -O2")
 
 set(CMAKE_C_FLAGS   "${CPU_FLAGS}${FPU_FLAGS}${COMMON_WARN_FLAGS}${OPT_FLAGS}")
 
